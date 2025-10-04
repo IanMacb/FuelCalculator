@@ -1,69 +1,70 @@
-from tkinter import *
-from tkinter import ttk
+import json
+import matplotlib
 
-LINECOUNT = 0
-table = []
+class FuelWizard(object):
+    def __init__(self):
+        self.big_dict = {}
 
-def add_line(n):
-    table.append({'airportID'+str(LINECOUNT):StringVar(), 'fuelPrice'+str(LINECOUNT):StringVar(), 'fee'+str(LINECOUNT):StringVar(), 'amountWaiveGal'+str(LINECOUNT):StringVar(),
-                  'amountWaiveLb'+str(LINECOUNT):StringVar(), 'costToWaive'+str(LINECOUNT):StringVar(), 'maxBeforeWaive'+str(LINECOUNT):StringVar(),'fuelTakingGal'+str(LINECOUNT):StringVar(),
-                  'fuelTakingLB'+str(LINECOUNT):StringVar(), 'legCost'+str(LINECOUNT):StringVar(), 'fuelStart'+str(LINECOUNT):StringVar(), 'fuelEnd'+str(LINECOUNT):StringVar(), 'legBurn'+str(LINECOUNT):StringVar()})
-    line = []
-    for k in table[LINECOUNT].keys():
-        line.append(k + 'Entry')
-        line[-1] = ttk.Entry(mainframe, textvariable=table[LINECOUNT][k], width=10)
-        line[-1].grid(row=LINECOUNT + 3, column=len(line)-1)
-        LINECOUNT += 1
-    return
+    def saveStuff(self):
+        with open('testTrips.json', 'w+') as f:
+            json.dump(self.big_dict, f, indent=4)
+
+    def openStuff(self):
+        with open('testTrips.json', 'r') as f:
+            self.big_dict = json.load(f)
+
+    def fillStuff(self):
+        for airportID, leg in self.big_dict.items():
+            leg['amountWaiveLB'] = leg['amountWaiveGal'] * 6.7
+            leg['costToWaive'] = leg['fuelPrice'] * leg['amountWaiveGal']
+            leg['maxBeforeWaive'] = round((leg['costToWaive'] - leg['fee']) / leg['fuelPrice'], 2)
+
+    def bigDumbIdiot(self):
+        currentIdiotTank = 0
+        totalCost = 0
+        for airportID, leg in self.big_dict.items():
+            burn = leg['legBurn']
+            fuelTake = max(burn - currentIdiotTank, 0)
+            if fuelTake >= leg['maxBeforeWaive'] * 6.7:
+                fuelTake = leg['amountWaiveLB']
+            legCost = fuelTake / 6.7 * leg['fuelPrice']
+            totalCost += legCost
+            currentIdiotTank += fuelTake
+            currentIdiotTank -= leg['legBurn']
+            print(f'total cost so far: ${round(totalCost, 2)}\t - Fuel purchased here: {fuelTake}')
 
 
+if __name__ == '__main__':
+    fw = FuelWizard()
+    '''fw.big_dict = {
+        'MMU': {'fuelPrice': 5.44, 'fee': 625, 'amountWaiveGal': 520, 'legBurn': 781},
+        'HPN': {'fuelPrice': 4.16, 'fee': 796, 'amountWaiveGal': 420, 'legBurn': 1860},
+        'LEW': {'fuelPrice': 5.39, 'fee': 500, 'amountWaiveGal': 400, 'legBurn': 3583},
+    }'''
+    fw.openStuff()
+    fw.fillStuff()
+    '''
+    for k, v in fw.big_dict.items():
+        print(k, v)'''
 
-root = Tk()
-root.title("Fuel Calculator")
-root.resizable(width=False, height=False)
+    fw.bigDumbIdiot()
 
-mainframe = ttk.Frame(root, padding=(3, 3, 12, 12))
-mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
 
-columnHeaders=['Airport', 'Fuel price', 'Fee', 'Amount\nto waive', 'Cost of fuel\nto waive',
-               'Max fuel before\nmin-to-waive', 'Fuel taking', 'Leg cost', 'Fuel\nstart / end',
-               'Leg burn']
-
-for i in range(len(columnHeaders)):
-    ttk.Label(mainframe, text=columnHeaders[i]).grid(column=i, row=0)
-
-add_line()
 
 '''
-airport1 = StringVar()
-airportEntry1 = ttk.Entry(mainframe, textvariable=airport1, width=10)
-airportEntry1.grid(column=0, row=2)
-
-fuelPrice1 = StringVar()
-fuelPriceEntry1 = ttk.Entry(mainframe, textvariable=fuelPrice1, width=10)
-fuelPriceEntry1.grid(column=1, row=2)
-
-fee1 = StringVar()
-feeEntry1 = ttk.Entry(mainframe, textvariable=fee1, width=10)
-feeEntry1.grid(column=2, row=2)
-
-amountWaive1 = StringVar()
-amountWaiveEntry1 = ttk.Entry(mainframe, textvariable=amountWaive1, width=10)
-amountWaiveEntry1.grid(column=3, row=2)
-'''
-
-
-
-
-ttk.Button(mainframe, text="Save").grid(column=0, row=LINECOUNT + 4, sticky=W)
-
-root.columnconfigure(0, weight=1)
-root.rowconfigure(0, weight=1)
-mainframe.columnconfigure(2, weight=1)
-for child in mainframe.winfo_children():
-    child.grid_configure(padx=5, pady=5)
-
-
-root.bind("<Return>")
-
-root.mainloop()
+bigList = []
+legDict = {
+    'airportID':None,
+    'fuelPrice':None,
+    'fee':None,
+    'amountWaiveGal':None,
+    'amountWaiveLb':None,
+    'costToWaive':None,
+    'maxBeforeWaive':None,
+    'fuelTakingGal':None,
+    'fuelTakingLb':None,
+    'legCost':None,
+    'fuelStart':None,
+    'fuelEnd':None,
+    'legBurn':None
+}'''
