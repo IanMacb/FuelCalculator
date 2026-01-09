@@ -19,6 +19,12 @@ class FuelWizard(object):
             leg['costToWaive'] = leg['fuelPrice'] * leg['amountWaiveGal']
             leg['maxBeforeWaive'] = round((leg['costToWaive'] - leg['fee']) / leg['fuelPrice'], 2)
 
+    def lb(self, gal):
+        return gal * 6.7
+
+    def gal(self, lb):
+        return lb / 6.7
+
     def bigDumbIdiot(self):
         currentIdiotTank = 0
         totalCost = 0
@@ -42,12 +48,12 @@ if __name__ == '__main__':
         'LEW': {'fuelPrice': 5.39, 'fee': 500, 'amountWaiveGal': 400, 'legBurn': 3583},
     }'''
     fw.openStuff()
-    fw.fillStuff()
+    #fw.fillStuff()
+    fw.bigDumbIdiot()
     '''
     for k, v in fw.big_dict.items():
-        print(k, v)'''
-
-    fw.bigDumbIdiot()
+        print(k, v)
+    '''
 
 
 
