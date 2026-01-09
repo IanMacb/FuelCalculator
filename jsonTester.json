@@ -1,0 +1,20 @@
+{
+  "IWA-SUN": {
+    "fuelPrice": "2234",
+    "parkingFee": "234",
+    "fee_waive_amount": "234",
+    "leg_burn": "234",
+    "max_takeoff": "234",
+    "max_landing": "234",
+    "zero_fuel_weight": "234"
+  },
+  "SUN-SRQ": {
+    "fuelPrice": "6456",
+    "parkingFee": "467",
+    "fee_waive_amount": "567567",
+    "leg_burn": "567",
+    "max_takeoff": "567",
+    "max_landing": "567",
+    "zero_fuel_weight": "567"
+  }
+}

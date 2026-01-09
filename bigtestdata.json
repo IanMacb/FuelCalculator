@@ -1,0 +1,29 @@
+{
+  "TEB-MDT": {
+    "fuel_price": 4.93,
+    "parking_fee": 0,
+    "fee_waive_amount": 0,
+    "leg_burn": 1204,
+    "fuel_weight_max_takeoff": 33750,
+    "fuel_weight_max_landing": 30000,
+    "zero_fuel_weight_here": 22310
+  },
+  "MDT-PVD": {
+    "fuel_price": 4.40,
+    "parking_fee": 735,
+    "fee_waive_amount": 500,
+    "leg_burn": 1984,
+    "fuel_weight_max_takeoff": 35650,
+    "fuel_weight_max_landing": 30000,
+    "zero_fuel_weight_here": 22310
+  },
+  "PVD-TEB": {
+    "fuel_price": 8.52,
+    "parking_fee": 0,
+    "fee_waive_amount": 0,
+    "leg_burn": 1913,
+    "fuel_weight_max_takeoff": 35650,
+    "fuel_weight_max_landing": 30000,
+    "zero_fuel_weight_here": 22310
+  }
+}
