@@ -25,5 +25,14 @@
         "max_takeoff": 35650,
         "max_landing": 30000,
         "zero_fuel_weight": 19000
+    },
+    "DCC-POW": {
+        "fuel_price": 0.0,
+        "parking_fee": 0.0,
+        "fee_waive_amount": 0,
+        "leg_burn": 0,
+        "max_takeoff": 35650,
+        "max_landing": 30000,
+        "zero_fuel_weight": 19000
     }
 }

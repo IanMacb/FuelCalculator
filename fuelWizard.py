@@ -203,9 +203,7 @@ class FuelWizard:
 
 def takeData(should_i_ask_for_trip_id = True, trip_id = None):
     if should_i_ask_for_trip_id:
-        leg = input("Please enter the Airport identifiers: ").upper()
-    else:
-        leg = trip_id
+        trip_id = input("Please enter the Airport identifiers: ").upper()
     fuel_price = float(input("Fuel price at departure: ") or 0.00)
     parking_fee = float(input("Parking fee: ") or 0.00)
     fee_waive_amount = int(input("Amount to waive fee: ") or 0.00)
@@ -222,12 +220,11 @@ def takeData(should_i_ask_for_trip_id = True, trip_id = None):
                 'max_landing': max_landing,
                 'zero_fuel_weight': zero_fuel_weight}
 
-    leg_add = {leg: leg_dict}
+    leg_add = {trip_id: leg_dict}
     return leg_add
 
 def asker():
-    input_info = {}
-    input_info.update(takeData())
+    input_info = takeData()
     while input("Add another leg? (y/n): ") == "y":
         print()
         input_info.update(takeData())
@@ -258,7 +255,7 @@ def interface():
 
 def helpMe():
     for i in OPTIONS:
-        print(f"{i} : {OPTIONS[i]}")
+        print(f"{i} : {OPTIONS[i]}\n")
 
 def calculate():
     data = fileOpen()
