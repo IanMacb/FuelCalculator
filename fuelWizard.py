@@ -255,7 +255,7 @@ def interface():
 
 def helpMe():
     for i in OPTIONS:
-        print(f"{i} : {OPTIONS[i]}\n")
+        print(f"{i} : {OPTIONS[i]}")
 
 def calculate():
     data = fileOpen()
