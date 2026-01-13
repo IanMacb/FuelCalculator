@@ -1,6 +1,8 @@
+import json
 import math
 import sys
-import json
+
+from shelper import SHelper
 
 FUEL_DENSITY_LBS_PER_GAL = 6.7
 
@@ -9,18 +11,14 @@ FUEL_START = 2500
 FUEL_CAPACITY = 15020
 PURCHASE_GRANULARITY_GAL = 10"""
 
-MESSAGE = "What would you like to do: "
-OPTIONS = {'h': 'help',
-           'q': 'quit',
-           'c': 'calculate',
-           'n': 'new trip',
-           'a': 'add leg',
-           'e': 'edit',
-           'r': 'remove leg',
-           'v': 'view',
-           'o': 'options',
-           'i': 'import',
-           'x': 'export'}
+"""
+TODO: leg dict keys are just the names of airports.
+    so if you go back and forth, you'll overwrite previous legs if you make the same leg twice.
+
+TODO: rewrite the table thing... again
+
+TODO: shelper output formatting vs printing
+"""
 
 
 def fileOpen(file_name):
@@ -29,16 +27,21 @@ def fileOpen(file_name):
     file.close()
     return data
 
+
 def fileSave(file_name, data):
     with open(f"{file_name}", "w+") as file:
         json.dump(data, file, indent=4)
     file.close()
 
-class FuelWizard:
+
+class FuelWizard(SHelper):
+    """I fuckin love buying fuel"""
+
     def __init__(self, leg_data: dict, options: dict):
         """
         :param leg_data: A dictionary of legs, keyed by leg name.
         """
+        super(FuelWizard, self).__init__()
         self.options = options
         self.fuel_start = self.options["FUEL_START"]
         self.fuel_reserve = self.options["FUEL_RESERVE"]
@@ -46,12 +49,131 @@ class FuelWizard:
         self.purchase_granularity_gal = self.options["PURCHASE_GRANULARITY_GAL"]
 
         self.leg_dict = leg_data
-        self.leg_keys = list(leg_data.keys())
+        self.leg_keys = list(self.leg_dict.keys())
         self.total_legs = len(self.leg_keys)
 
         # keep track of the best plan and cost (cost initialized to a wild fucking value)
         self.min_trip_cost = sys.float_info.max
         self.best_purchase_plan = None
+        self.mainloop()
+
+    def mainloop(self):
+        while True:
+            cmd = input(f"{__class__.__name__}>")
+            response = self.parse_command(cmd)
+            print(response)
+
+    def cmd_remove_leg(self):
+        "remove leg dialog"
+        for leg_key in self.leg_keys:
+            print(
+                f"{self.leg_keys.index(leg_key)}: {leg_key}: {self.leg_dict[leg_key]}"
+            )
+        # key_list = data.keys()
+        inpt = int(input("Which leg to remove: "))
+        if inpt < len(list(self.leg_keys)) and inpt >= 0:
+            selected_leg = list(self.leg_keys)[inpt]
+            print(f"{selected_leg} removed\n")
+            self.leg_dict.pop(selected_leg)
+            self.leg_keys = list(self.leg_dict.keys())
+            self.total_legs = len(self.leg_keys)
+            # fileSave("tripData.json", data)
+        else:
+            print("Not in range\n")
+        # return data
+
+    def cmd_calculate(self):
+        """crunch the numbas"""
+        best_cost, best_plan = self.optimize_fuel_purchases(
+            self.fuel_start - self.fuel_reserve
+        )
+        print(
+            f"\n{'Plan:'}"
+            f"{'Fuel start: ':>56}{self.options['FUEL_START']:>9}"
+            f"{'Total Cost:':>55} {'$':>{9 - len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}{'':20}"
+        )
+        for e in best_plan:
+            print(
+                f"{e['leg']} : "
+                f"{e['purchase_gallons']:4} gal @ "
+                f"{'$':>{9 - len(str(f'{e["purchase_cost"]:.2f}'))}}{e['purchase_cost']:.2f} & "
+                f"{'$':>{9 - len(str(f'{e["parking_fee_paid"]:.2f}'))}}{e['parking_fee_paid']:.2f} fee | "
+                f"Fuel start/end: {e['fuel_start']:5}/{e['fuel_end']:<4} | "
+                f"Takeoff weight: {e['takeoff_weight']:5}/{e['max_takeoff']:5} | "
+                f"Landing weight: {e['landing_weight']:5}/{e['max_landing']:5}"
+            )
+        # print()
+
+    def cmd_quit(self):
+        """kill me"""
+        print("quitting")
+        exit()
+
+    def cmd_new_trip(self):
+        """add a whole ass new trip. follow the dialog."""
+        self.leg_dict = {}
+        user_says_this_much_fuel = input("fuel start:")
+        self.options["FUEL_START"] = int(user_says_this_much_fuel)
+
+        self.cmd_add_leg()
+
+        while True:
+            if input("add new leg? (y/n)?").upper() in ["Y", "YES"]:
+                self.cmd_add_leg()
+            else:
+                return
+
+    def cmd_add_leg(self, leg_name=None):
+        """Add a leg to the existing trip."""
+
+        if not leg_name:
+            trip_id = input("Please enter the Airport identifiers: ").upper()
+        else:
+            trip_id = leg_name
+        fuel_price = float(input("Fuel price at departure: ") or 0.00)
+        parking_fee = float(input("Parking fee: ") or 0.00)
+        fee_waive_amount = int(input("Amount to waive fee: ") or 0.00)
+        leg_burn = int(input("Leg burn: ") or 0)
+        max_takeoff = int(input("Max takeoff weight (default:35650): ") or 35650)
+        max_landing = int(input("Max landing weight (default:30000): ") or 30000)
+        zero_fuel_weight = int(input("Zero fuel weight: ") or 19000)
+
+        new_leg_data = {
+            "fuel_price": fuel_price,
+            "parking_fee": parking_fee,
+            "fee_waive_amount": fee_waive_amount,
+            "leg_burn": leg_burn,
+            "max_takeoff": max_takeoff,
+            "max_landing": max_landing,
+            "zero_fuel_weight": zero_fuel_weight,
+        }
+        self.leg_dict[trip_id] = new_leg_data
+        self.leg_keys = list(self.leg_dict.keys())
+        self.total_legs = len(self.leg_keys)
+
+    def cmd_view(self):
+        """View the current trip."""
+        for k, v in self.leg_dict.items():
+            print(k, v)
+
+    def cmd_export(self, fname=None):
+        if not fname:
+            file_name = input("Save as: ")
+        else:
+            file_name = fname
+        fileSave(f"{file_name}.json", self.leg_dict)
+        return
+
+    def cmd_import(self, fname=None):
+        if not fname:
+            file_name = input("filename:")
+            try:
+                self.leg_dict = fileOpen(f"{file_name}.json")
+                self.leg_keys = list(self.leg_dict.keys())
+                self.total_legs = len(self.leg_keys)
+            except FileNotFoundError:
+                print("File not found")
+            return
 
     def _get_max_fuel_start_lbs(self, leg_index: int) -> float:
         """
@@ -79,11 +201,11 @@ class FuelWizard:
         return min(max_takeoff_fuel, max_by_landing_wt)
 
     def _find_min_cost(
-            self,
-            leg_index: int,
-            current_fuel_remaining_lbs: float,
-            current_cost: float,
-            current_plan: list,
+        self,
+        leg_index: int,
+        current_fuel_remaining_lbs: float,
+        current_cost: float,
+        current_plan: list,
     ):
         """
         Recursive. Explores all valid purchase paths and find the minimum cost.
@@ -102,7 +224,7 @@ class FuelWizard:
             # Final destination reached without short-circuiting means we found a cheaper solution.
             self.min_trip_cost = current_cost
             self.best_purchase_plan = current_plan
-            #print(f"{round(self.min_trip_cost, 2)}")
+            # print(f"{round(self.min_trip_cost, 2)}")
             return
 
         # current leg data and constraints
@@ -149,20 +271,25 @@ class FuelWizard:
         # iterate through all possible fuel purchases for this leg.
         # min/max gal inclusive. Step by granularity.
         for purchase_gal in range(
-                min_purchase_gal, max_purchase_gal, self.purchase_granularity_gal
+            min_purchase_gal, max_purchase_gal, self.purchase_granularity_gal
         ):
             # calculate possible fuel states
             purchase_lbs = purchase_gal * FUEL_DENSITY_LBS_PER_GAL
             fuel_start_lbs = current_fuel_remaining_lbs + purchase_lbs
             next_fuel_remaining_lbs = fuel_start_lbs - this_leg["leg_burn"]
-            takeoff_weight = this_leg["zero_fuel_weight"] + self.fuel_reserve + fuel_start_lbs
+            takeoff_weight = (
+                this_leg["zero_fuel_weight"] + self.fuel_reserve + fuel_start_lbs
+            )
             landing_weight = takeoff_weight - this_leg["leg_burn"]
 
             # 2. Calculate Cost
             purchase_cost = purchase_gal * this_leg["fuel_price"]
 
             fee_paid = this_leg["parking_fee"]
-            if purchase_gal >= this_leg["fee_waive_amount"] and this_leg["fee_waive_amount"] > 0:
+            if (
+                purchase_gal >= this_leg["fee_waive_amount"]
+                and this_leg["fee_waive_amount"] > 0
+            ):
                 fee_paid = 0
 
             new_total_cost = current_cost + purchase_cost + fee_paid
@@ -211,9 +338,10 @@ class FuelWizard:
             print("No feasible route found based on the provided constraints.")
             return (self.min_trip_cost, [])
 
-        return (self.min_trip_cost, self.best_purchase_plan)
+        return self.min_trip_cost, self.best_purchase_plan
 
-def takeData(should_i_ask_for_trip_id = True, trip_id = None):
+
+def takeData(should_i_ask_for_trip_id=True, trip_id=None):
     if should_i_ask_for_trip_id:
         trip_id = input("Please enter the Airport identifiers: ").upper()
     fuel_price = float(input("Fuel price at departure: ") or 0.00)
@@ -224,16 +352,19 @@ def takeData(should_i_ask_for_trip_id = True, trip_id = None):
     max_landing = int(input("Max landing weight (default:30000): ") or 30000)
     zero_fuel_weight = int(input("Zero fuel weight: ") or 19000)
 
-    leg_dict = {'fuel_price': fuel_price,
-                'parking_fee': parking_fee,
-                'fee_waive_amount': fee_waive_amount,
-                'leg_burn': leg_burn,
-                'max_takeoff': max_takeoff,
-                'max_landing': max_landing,
-                'zero_fuel_weight': zero_fuel_weight}
+    leg_dict = {
+        "fuel_price": fuel_price,
+        "parking_fee": parking_fee,
+        "fee_waive_amount": fee_waive_amount,
+        "leg_burn": leg_burn,
+        "max_takeoff": max_takeoff,
+        "max_landing": max_landing,
+        "zero_fuel_weight": zero_fuel_weight,
+    }
 
     leg_add = {trip_id: leg_dict}
     return leg_add
+
 
 def asker():
     input_info = takeData()
@@ -243,75 +374,6 @@ def asker():
     print()
     return input_info
 
-def interface():
-    inpt = str
-    while inpt != "q":
-        inpt = input(MESSAGE)
-        if inpt not in OPTIONS.keys():
-            print("Sorry command not recognized.")
-        elif inpt == "h":
-            helpMe()
-        elif inpt == "q":
-            quit()
-        elif inpt == "c":
-            calculate()
-        elif inpt == "n":
-            newTrip()
-        elif inpt == "a":
-            addLeg()
-        elif inpt == "e":
-            editLeg()
-        elif inpt == "r":
-            removeLeg()
-        elif inpt == "v":
-            viewLegs()
-        elif inpt == "o":
-            options()
-        elif inpt == "i":
-            importTrip()
-        elif inpt == "x":
-            exportTrip()
-
-def helpMe():
-    for i in OPTIONS:
-        print(f"{i} : {OPTIONS[i]}")
-
-def calculate():
-    data = fileOpen("tripData.json")
-    opts = fileOpen("options.json")
-
-    fw = FuelWizard(data, opts)
-    best_cost, best_plan = fw.optimize_fuel_purchases(opts["FUEL_START"]-opts["FUEL_RESERVE"])
-    print(f"\n{'Plan:'}"
-          f"{'Fuel start: ':>56}{opts['FUEL_START']:>9}"
-          f"{'Total Cost:':>55} {'$':>{9-len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}{'':20}"
-          )
-    for e in best_plan:
-        print(f"{e["leg"]} : "
-              f"{e["purchase_gallons"]:4} gal @ "
-              f"{'$':>{9-len(str(f'{e["purchase_cost"]:.2f}'))}}{e["purchase_cost"]:.2f} & "
-              f"{'$':>{9-len(str(f'{e["parking_fee_paid"]:.2f}'))}}{e["parking_fee_paid"]:.2f} fee | "
-              f"Fuel start/end: {e["fuel_start"]:5}/{e['fuel_end']:<4} | "
-              f"Takeoff weight: {e["takeoff_weight"]:5}/{e["max_takeoff"]:5} | "
-              f"Landing weight: {e["landing_weight"]:5}/{e['max_landing']:5}"
-              )
-    print()
-
-def newTrip():
-    opts = fileOpen("options.json")
-    fuel_start = {"FUEL_START": int(input("Fuel start: "))}
-    opts.update(fuel_start)
-    fileSave("options.json", opts)
-
-    data = asker()
-    fileSave("tripData.json", data)
-    return data
-
-def addLeg():
-    data = fileOpen("tripData.json")
-    data.update(asker())
-    fileSave("tripData.json", data)
-    return data
 
 def editLeg():
     data = viewLegs()
@@ -329,62 +391,41 @@ def editLeg():
     fileSave("tripData.json", data)
     return data
 
-def removeLeg():
-    data = viewLegs()
-    key_list = data.keys()
-    inpt = int(input("Which leg to remove: ")) - 1
-    if inpt < len(list(key_list)) and inpt > 0:
-        selected_leg = list(key_list)[inpt]
-        print(f"{selected_leg} removed\n")
-        data.pop(selected_leg)
-        fileSave("tripData.json", data)
-    else:
-        print("Not in range\n")
-    return data
-
-def viewLegs():
-    data = fileOpen("tripData.json")
-    for i, k in enumerate(data.keys()):
-        print(str(i + 1) + " : " + str(k))
-    print()
-    return data
 
 def options():
     opts = fileOpen("options.json")
 
-    fuel_start = int(input(f"Fuel start: ({opts["FUEL_START"]}) ") or opts["FUEL_START"])
-    fuel_reserve = int(input(f"Reserve: ({opts["FUEL_RESERVE"]}) ") or opts["FUEL_RESERVE"])
-    fuel_capacity = int(input(f"Fuel tank maximum capacity: ({opts["FUEL_CAPACITY"]}) ") or opts["FUEL_CAPACITY"])
-    calculation_granularity = int(input(f"Calculation granularity: ({opts["PURCHASE_GRANULARITY_GAL"]}) ") or opts["PURCHASE_GRANULARITY_GAL"])
+    fuel_start = int(
+        input(f"Fuel start: ({opts['FUEL_START']}) ") or opts["FUEL_START"]
+    )
+    fuel_reserve = int(
+        input(f"Reserve: ({opts['FUEL_RESERVE']}) ") or opts["FUEL_RESERVE"]
+    )
+    fuel_capacity = int(
+        input(f"Fuel tank maximum capacity: ({opts['FUEL_CAPACITY']}) ")
+        or opts["FUEL_CAPACITY"]
+    )
+    calculation_granularity = int(
+        input(f"Calculation granularity: ({opts['PURCHASE_GRANULARITY_GAL']}) ")
+        or opts["PURCHASE_GRANULARITY_GAL"]
+    )
     print()
 
     fw_options = {
         "FUEL_START": fuel_start,
         "FUEL_RESERVE": fuel_reserve,
         "FUEL_CAPACITY": fuel_capacity,
-        "PURCHASE_GRANULARITY_GAL": calculation_granularity}
+        "PURCHASE_GRANULARITY_GAL": calculation_granularity,
+    }
 
     opts.update(fw_options)
     fileSave("options.json", opts)
 
     return fw_options
 
-def exportTrip():
-    data = fileOpen("tripData.json")
-    file_name = input("Save as: ")
-    fileSave(f"{file_name}.json", data)
-    print()
-    return
-
-def importTrip():
-    file_name = input("Open file: ")
-    try:
-        data = fileOpen(f"{file_name}.json")
-        fileSave("tripData.json", data)
-    except FileNotFoundError:
-        print("File not found")
-    print()
-    return
 
 if __name__ == "__main__":
-    interface()
+    # interface()
+    data = fileOpen("tripData.json")
+    opts = fileOpen("options.json")
+    fw = FuelWizard(data, opts)
