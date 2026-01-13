@@ -1,7 +1,6 @@
 import math
 import sys
 import json
-from encodings.punycode import selective_find
 
 FUEL_DENSITY_LBS_PER_GAL = 6.7
 
