@@ -16,14 +16,5 @@
         "max_takeoff": 35650,
         "max_landing": 30000,
         "zero_fuel_weight": 21673
-    },
-    "SJT-IXK": {
-        "fuel_price": 6.29,
-        "parking_fee": 810,
-        "fee_waive_amount": 550,
-        "leg_burn": 6947,
-        "max_takeoff": 34603,
-        "max_landing": 30000,
-        "zero_fuel_weight": 23529
     }
 }

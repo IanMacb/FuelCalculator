@@ -11,14 +11,16 @@ PURCHASE_GRANULARITY_GAL = 10"""
 
 MESSAGE = "What would you like to do: "
 OPTIONS = {'h': 'help',
-           'x': 'exit',
+           'q': 'quit',
            'c': 'calculate',
            'n': 'new trip',
            'a': 'add leg',
            'e': 'edit',
            'r': 'remove leg',
            'v': 'view',
-           'o': 'options'}
+           'o': 'options',
+           'i': 'import',
+           'x': 'export'}
 
 
 def fileOpen(file_name):
@@ -243,14 +245,14 @@ def asker():
 
 def interface():
     inpt = str
-    while inpt != "x":
+    while inpt != "q":
         inpt = input(MESSAGE)
         if inpt not in OPTIONS.keys():
             print("Sorry command not recognized.")
         elif inpt == "h":
             helpMe()
-        elif inpt == "x":
-            exit()
+        elif inpt == "q":
+            quit()
         elif inpt == "c":
             calculate()
         elif inpt == "n":
@@ -265,6 +267,10 @@ def interface():
             viewLegs()
         elif inpt == "o":
             options()
+        elif inpt == "i":
+            importTrip()
+        elif inpt == "x":
+            exportTrip()
 
 def helpMe():
     for i in OPTIONS:
@@ -327,11 +333,13 @@ def removeLeg():
     data = viewLegs()
     key_list = data.keys()
     inpt = int(input("Which leg to remove: ")) - 1
-    selected_leg = list(key_list)[inpt]
-
-    print(f"{selected_leg} removed\n")
-    data.pop(selected_leg)
-    fileSave("tripData.json", data)
+    if inpt < len(list(key_list)) and inpt > 0:
+        selected_leg = list(key_list)[inpt]
+        print(f"{selected_leg} removed\n")
+        data.pop(selected_leg)
+        fileSave("tripData.json", data)
+    else:
+        print("Not in range\n")
     return data
 
 def viewLegs():
@@ -360,6 +368,23 @@ def options():
     fileSave("options.json", opts)
 
     return fw_options
+
+def exportTrip():
+    data = fileOpen("tripData.json")
+    file_name = input("Save as: ")
+    fileSave(f"{file_name}.json", data)
+    print()
+    return
+
+def importTrip():
+    file_name = input("Open file: ")
+    try:
+        data = fileOpen(f"{file_name}.json")
+        fileSave("tripData.json", data)
+    except FileNotFoundError:
+        print("File not found")
+    print()
+    return
 
 if __name__ == "__main__":
     interface()
