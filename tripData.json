@@ -1,20 +1,29 @@
 {
-    "IWA-SUN": {
-        "fuel_price": 4.68,
-        "parking_fee": 205.0,
-        "fee_waive_amount": 600,
-        "leg_burn": 3700,
+    "FWD-ANW": {
+        "fuel_price": 7.46,
+        "parking_fee": 1680,
+        "fee_waive_amount": 60,
+        "leg_burn": 9722,
         "max_takeoff": 35650,
-        "max_landing": 28501,
-        "zero_fuel_weight": 20605
-    },
-    "SUN-SRQ": {
-        "fuel_price": 8.07,
-        "parking_fee": 976.0,
-        "fee_waive_amount": 421,
-        "leg_burn": 8400,
-        "max_takeoff": 32705,
         "max_landing": 30000,
-        "zero_fuel_weight": 21395
+        "zero_fuel_weight": 20959
+    },
+    "PNQ-WGJ": {
+        "fuel_price": 3.54,
+        "parking_fee": 1620,
+        "fee_waive_amount": 300,
+        "leg_burn": 1497,
+        "max_takeoff": 35650,
+        "max_landing": 30000,
+        "zero_fuel_weight": 21673
+    },
+    "SJT-IXK": {
+        "fuel_price": 6.29,
+        "parking_fee": 810,
+        "fee_waive_amount": 550,
+        "leg_burn": 6947,
+        "max_takeoff": 34603,
+        "max_landing": 30000,
+        "zero_fuel_weight": 23529
     }
 }
