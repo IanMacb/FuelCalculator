@@ -3,11 +3,11 @@ import sys
 import json
 from encodings.punycode import selective_find
 
-FUEL_CAPACITY = 15020
 FUEL_DENSITY_LBS_PER_GAL = 6.7
 
 """FUEL_RESERVE = 2500
 FUEL_START = 2500
+FUEL_CAPACITY = 15020
 PURCHASE_GRANULARITY_GAL = 10"""
 
 MESSAGE = "What would you like to do: "
@@ -41,6 +41,7 @@ class FuelWizard:
         self.options = options
         self.fuel_start = self.options["FUEL_START"]
         self.fuel_reserve = self.options["FUEL_RESERVE"]
+        self.fuel_capacity = self.options["FUEL_CAPACITY"]
         self.purchase_granularity_gal = self.options["PURCHASE_GRANULARITY_GAL"]
 
         self.leg_dict = leg_data
@@ -64,7 +65,7 @@ class FuelWizard:
 
         # max takeoff weight at current airport
         max_takeoff_fuel = current_leg_data["max_takeoff"] - min_fuel_weight
-        max_takeoff_fuel = min(max_takeoff_fuel, FUEL_CAPACITY)
+        max_takeoff_fuel = min(max_takeoff_fuel, self.fuel_capacity)
 
         # leg burn
         leg_burn = current_leg_data["leg_burn"]
@@ -276,7 +277,7 @@ def calculate():
 
     fw = FuelWizard(data, opts)
     best_cost, best_plan = fw.optimize_fuel_purchases(opts["FUEL_START"]-opts["FUEL_RESERVE"])
-    print(f"{'Plan:'}"
+    print(f"\n{'Plan:'}"
           f"{'Fuel start: ':>56}{opts['FUEL_START']:>9}"
           f"{'Total Cost:':>55} {'$':>{9-len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}{'':20}"
           )
@@ -346,12 +347,14 @@ def options():
 
     fuel_start = int(input(f"Fuel start: ({opts["FUEL_START"]}) ") or opts["FUEL_START"])
     fuel_reserve = int(input(f"Reserve: ({opts["FUEL_RESERVE"]}) ") or opts["FUEL_RESERVE"])
-    calculation_granularity = int(input(f"Calculation granularity: ({opts["PURCHASE_GRANULARITY_GAL"]})") or opts["PURCHASE_GRANULARITY_GAL"])
+    fuel_capacity = int(input(f"Fuel tank maximum capacity: ({opts["FUEL_CAPACITY"]}) ") or opts["FUEL_CAPACITY"])
+    calculation_granularity = int(input(f"Calculation granularity: ({opts["PURCHASE_GRANULARITY_GAL"]}) ") or opts["PURCHASE_GRANULARITY_GAL"])
     print()
 
     fw_options = {
         "FUEL_START": fuel_start,
         "FUEL_RESERVE": fuel_reserve,
+        "FUEL_CAPACITY": fuel_capacity,
         "PURCHASE_GRANULARITY_GAL": calculation_granularity}
 
     opts.update(fw_options)
