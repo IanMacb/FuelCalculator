@@ -1,35 +1,32 @@
 import json
 import math
 import sys
-
+import configparser
 from shelper import SHelper
+from pathlib import Path
+
 
 FUEL_DENSITY_LBS_PER_GAL = 6.7
 
-"""FUEL_RESERVE = 2500
-FUEL_START = 2500
-FUEL_CAPACITY = 15020
-PURCHASE_GRANULARITY_GAL = 10"""
 
-"""
-TODO: leg dict keys are just the names of airports.
-    so if you go back and forth, you'll overwrite previous legs if you make the same leg twice.
+#TODO: leg dict keys are just the names of airports, so if you go back and forth, you'll overwrite previous legs if you make the same leg twice.
 
-TODO: rewrite the table thing... again
+#TODO: rewrite the table thing... again
 
-TODO: shelper output formatting vs printing
-"""
+#TODO: shelper output formatting vs printing
 
 
 def fileOpen(file_name):
-    with open(f"{file_name}", "r") as file:
+    path = Path(__file__).absolute().parents[0]
+    with open(f"{path}/{file_name}", "r") as file:
         data = json.load(file)
     file.close()
     return data
 
 
 def fileSave(file_name, data):
-    with open(f"{file_name}", "w+") as file:
+    path = Path(__file__).absolute().parents[0]
+    with open(f"{path}/{file_name}", "w+") as file:
         json.dump(data, file, indent=4)
     file.close()
 
@@ -37,12 +34,14 @@ def fileSave(file_name, data):
 class FuelWizard(SHelper):
     """I fuckin love buying fuel"""
 
-    def __init__(self, leg_data: dict, options: dict):
+    def __init__(self, leg_data: list):
         """
         :param leg_data: A dictionary of legs, keyed by leg name.
         """
         super(FuelWizard, self).__init__()
-        self.options = options
+        self.options = configparser.ConfigParser()
+        path = Path(__file__).absolute().parents[0]
+        self.options.read_file(f"{path}/options.cfg")
         self.fuel_start = self.options["FUEL_START"]
         self.fuel_reserve = self.options["FUEL_RESERVE"]
         self.fuel_capacity = self.options["FUEL_CAPACITY"]
@@ -151,6 +150,24 @@ class FuelWizard(SHelper):
         self.leg_keys = list(self.leg_dict.keys())
         self.total_legs = len(self.leg_keys)
 
+    #TODO fix it
+    def cmd_edit_leg(self, trip_id, leg_name):
+        """Edit an existing leg"""
+        self.cmd_view()
+        key_list = data.keys()
+        inpt = int(input("Which leg to edit: ")) - 1
+        selected_leg = list(key_list)[inpt]
+
+        print(f"\n---{selected_leg}---")
+        selected_leg_dict = data.get(selected_leg)
+        for i in selected_leg_dict:
+            print(f"{i}: {selected_leg_dict[i]}")
+        print()
+        data.update(takeData(False, selected_leg))
+        print()
+        fileSave("tripData.json", data)
+        return data
+
     def cmd_view(self):
         """View the current trip."""
         for k, v in self.leg_dict.items():
@@ -174,6 +191,26 @@ class FuelWizard(SHelper):
             except FileNotFoundError:
                 print("File not found")
             return
+
+    def cmd_options(self):
+
+        fuel_start = self.options.get("Aircraft", "FUEL_START")
+        fuel_start = int(input(f"Fuel start: ({fuel_start}) ") or fuel_start)
+        self.options.set("Aircraft", "FUEL_START", fuel_start)
+
+        fuel_reserve = self.options.get("Aircraft", "FUEL_RESERVE")
+        fuel_reserve = int(input(f"Reserve: ({fuel_reserve}) ") or fuel_reserve)
+        self.options.set("Aircraft", "FUEL_RESERVE", fuel_reserve)
+
+        fuel_capacity = self.options.get("Aircraft", "FUEL_CAPACITY")
+        fuel_capacity = int(input(f"Fuel tank maximum capacity: ({fuel_capacity}) ") or fuel_capacity)
+        self.options.set("Aircraft", "FUEL_CAPACITY", fuel_capacity)
+
+        calculation_granularity = self.options.get("Calculator", "CALCULATION_GRANULARITY")
+        calculation_granularity = int(input(f"Calculation granularity: ({calculation_granularity}) ") or calculation_granularity)
+        self.options.set("Calculator", "CALCULATION_GRANULARITY", calculation_granularity)
+        print()
+
 
     def _get_max_fuel_start_lbs(self, leg_index: int) -> float:
         """
@@ -200,8 +237,7 @@ class FuelWizard(SHelper):
         # gives most restrictive of takeoff or landing weight limit
         return min(max_takeoff_fuel, max_by_landing_wt)
 
-    def _find_min_cost(
-        self,
+    def _find_min_cost(self,
         leg_index: int,
         current_fuel_remaining_lbs: float,
         current_cost: float,
@@ -286,10 +322,7 @@ class FuelWizard(SHelper):
             purchase_cost = purchase_gal * this_leg["fuel_price"]
 
             fee_paid = this_leg["parking_fee"]
-            if (
-                purchase_gal >= this_leg["fee_waive_amount"]
-                and this_leg["fee_waive_amount"] > 0
-            ):
+            if purchase_gal >= this_leg["fee_waive_amount"] > 0:
                 fee_paid = 0
 
             new_total_cost = current_cost + purchase_cost + fee_paid
@@ -365,7 +398,6 @@ def takeData(should_i_ask_for_trip_id=True, trip_id=None):
     leg_add = {trip_id: leg_dict}
     return leg_add
 
-
 def asker():
     input_info = takeData()
     while input("Add another leg? (y/n): ") == "y":
@@ -375,57 +407,6 @@ def asker():
     return input_info
 
 
-def editLeg():
-    data = viewLegs()
-    key_list = data.keys()
-    inpt = int(input("Which leg to edit: ")) - 1
-    selected_leg = list(key_list)[inpt]
-
-    print(f"\n---{selected_leg}---")
-    selected_leg_dict = data.get(selected_leg)
-    for i in selected_leg_dict:
-        print(f"{i}: {selected_leg_dict[i]}")
-    print()
-    data.update(takeData(False, selected_leg))
-    print()
-    fileSave("tripData.json", data)
-    return data
-
-
-def options():
-    opts = fileOpen("options.json")
-
-    fuel_start = int(
-        input(f"Fuel start: ({opts['FUEL_START']}) ") or opts["FUEL_START"]
-    )
-    fuel_reserve = int(
-        input(f"Reserve: ({opts['FUEL_RESERVE']}) ") or opts["FUEL_RESERVE"]
-    )
-    fuel_capacity = int(
-        input(f"Fuel tank maximum capacity: ({opts['FUEL_CAPACITY']}) ")
-        or opts["FUEL_CAPACITY"]
-    )
-    calculation_granularity = int(
-        input(f"Calculation granularity: ({opts['PURCHASE_GRANULARITY_GAL']}) ")
-        or opts["PURCHASE_GRANULARITY_GAL"]
-    )
-    print()
-
-    fw_options = {
-        "FUEL_START": fuel_start,
-        "FUEL_RESERVE": fuel_reserve,
-        "FUEL_CAPACITY": fuel_capacity,
-        "PURCHASE_GRANULARITY_GAL": calculation_granularity,
-    }
-
-    opts.update(fw_options)
-    fileSave("options.json", opts)
-
-    return fw_options
-
-
 if __name__ == "__main__":
-    # interface()
     data = fileOpen("tripData.json")
-    opts = fileOpen("options.json")
-    fw = FuelWizard(data, opts)
+    fw = FuelWizard(data)
