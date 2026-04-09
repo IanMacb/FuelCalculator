@@ -20,11 +20,11 @@ def fileSave(file_name, data):
 
 class tripMaker():
     def __init__(self):
-        self.data = {}
+        self.data = []
 
     def genName(self):
-        trip_id = ''.join(rand.choices(string.ascii_uppercase, k=3)) + "-" + ''.join(rand.choices(string.ascii_uppercase, k=3))
-        return trip_id
+        leg_id = ''.join(rand.choices(string.ascii_uppercase, k=3)) + "-" + ''.join(rand.choices(string.ascii_uppercase, k=3))
+        return leg_id
 
     def genFuelPrice(self):
         return rand.randint(300, 800) / 100
@@ -61,7 +61,7 @@ class tripMaker():
 
     def addLeg(self):
         add_leg = {
-            self.genName(): {
+                "leg_id": self.genName(),
                 "fuel_price": self.genFuelPrice(),
                 "parking_fee": self.genFee(),
                 "fee_waive_amount": self.genWaiveAmnt(),
@@ -69,9 +69,8 @@ class tripMaker():
                 "max_takeoff": self.genMaxTakeoff(),
                 "max_landing": self.genMaxLanding(),
                 "zero_fuel_weight": self.genZeroFuelWeight()
-            }
         }
-        self.data.update(add_leg)
+        self.data.append(add_leg)
 
 
 if __name__ == '__main__':
@@ -80,4 +79,4 @@ if __name__ == '__main__':
     for i in range(RUN_TIMES):
         tm.addLeg()
 
-    fileSave("tripData.json", tm.data)
+    fileSave("fake_tripData.json", tm.data)

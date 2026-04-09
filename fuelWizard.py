@@ -39,7 +39,10 @@ class FuelWizard(SHelper):
         self.fuel_capacity = self.options.getint("Aircraft", "FUEL_CAPACITY")
         self.granularity = self.options.getint("Calculator", "GRANULARITY")
 
-        self.trip_data = fileOpen("tripData.json")
+        try:
+            self.trip_data = fileOpen("tripData.json")
+        except FileNotFoundError:
+            self.trip_data = []
         self.total_legs = len(self.trip_data)
 
         # keep track of the best plan and cost (cost initialized to a wild fucking value)
