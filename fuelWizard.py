@@ -92,12 +92,12 @@ class FuelWizard(SHelper):
         print(f"\n---{selected_leg["leg_id"]}---")
 
         fuel_price = float(input(f"Fuel price at departure ({selected_leg["fuel_price"]}): ") or selected_leg["fuel_price"])
-        parking_fee = float(input("Parking fee: ") or selected_leg["parking_fee"])
-        fee_waive_amount = float(input("Amount to waive fee: ") or selected_leg["fee_waive_amount"])
-        leg_burn = int(input("Leg burn: ") or selected_leg["leg_burn"])
-        max_takeoff = int(input("Max takeoff weight: ") or selected_leg["max_takeoff"])
-        max_landing = int(input("Max landing weight: ") or selected_leg["max_landing"])
-        zero_fuel_weight = int(input("Zero fuel weight: ") or selected_leg["zero_fuel_weight"])
+        parking_fee = float(input(f"Parking fee ({selected_leg["parking_fee"]}): ") or selected_leg["parking_fee"])
+        fee_waive_amount = float(input(f"Amount to waive fee ({selected_leg["fee_waive_amount"]}): ") or selected_leg["fee_waive_amount"])
+        leg_burn = int(input(f"Leg burn ({selected_leg["leg_burn"]}): ") or selected_leg["leg_burn"])
+        max_takeoff = int(input(f"Max takeoff weight ({selected_leg["max_takeoff"]}): ") or selected_leg["max_takeoff"])
+        max_landing = int(input(f"Max landing weight ({selected_leg["max_landing"]}): ") or selected_leg["max_landing"])
+        zero_fuel_weight = int(input(f"Zero fuel weight ({selected_leg["zero_fuel_weight"]}): ") or selected_leg["zero_fuel_weight"])
 
         edit_leg_data = {
             "leg_id": selected_leg["leg_id"],
