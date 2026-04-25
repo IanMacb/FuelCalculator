@@ -134,15 +134,15 @@ class FuelWizard(SHelper):
         best_cost, best_plan = self.optimize_fuel_purchases(
             self.fuel_start - self.fuel_reserve
         )
-        #TODO format better
         print(
-            f"\n{'Plan:'}"
-            f"{'Fuel start: ':>56}{self.fuel_start:>9}"
-            f"{'Total Cost:':>55} {'$':>{9 - len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}{'':20}"
+            f"\nPlan:"
+            #f"{'Total Cost: ':>18}{'$':>{9 - len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}"
+            f"{f'Total Cost: ${round(best_cost, 2):.2f}':>27}"
+            f"{f'Fuel start:  {self.fuel_start}':>40}"
         )
         for e in best_plan:
             print(
-                f"{e['leg_id']} \t: "
+                f"{e['leg_id']:>10}: "
                 f"{e['purchase_gallons']:4} gal @ "
                 f"{'$':>{9 - len(str(f'{e["purchase_cost"]:.2f}'))}}{e['purchase_cost']:.2f} & "
                 f"{'$':>{9 - len(str(f'{e["parking_fee_paid"]:.2f}'))}}{e['parking_fee_paid']:.2f} fee | "
