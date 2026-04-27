@@ -35,8 +35,14 @@ class FuelWizard(SHelper):
         self.path = Path(__file__).absolute().parents[0]
         try:
             self.options.read_file(open(f"{self.path}/options.cfg", "r"))
-        except configparser.Error:
+        except FileNotFoundError:
             print("No config file located. Lets make one...")
+            self.options.add_section("Aircraft")
+            self.options.add_section("Calculator")
+            self.fuel_start = 0
+            self.fuel_reserve = 0
+            self.fuel_capacity = 0
+            self.granularity = 10
             self.cmd_options()
         self.fuel_start = self.options.getint("Aircraft", "FUEL_START")
         self.fuel_reserve = self.options.getint("Aircraft", "FUEL_RESERVE")
