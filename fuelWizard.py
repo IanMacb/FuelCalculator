@@ -33,7 +33,7 @@ class FuelWizard(SHelper):
 
         self.options = configparser.ConfigParser()
         self.path = Path(__file__).absolute().parents[0]
-        self.options.read_file(open(f"{self.path}/options.cfg"))
+        self.options.read_file(open(f"{self.path}/options.cfg", "r"))
         self.fuel_start = self.options.getint("Aircraft", "FUEL_START")
         self.fuel_reserve = self.options.getint("Aircraft", "FUEL_RESERVE")
         self.fuel_capacity = self.options.getint("Aircraft", "FUEL_CAPACITY")
@@ -123,8 +123,9 @@ class FuelWizard(SHelper):
 
     def cmd_new(self):
         self.trip_data = []
-        self.fuel_start = input("Fuel start: ")
-        self.options.set("Aircraft", "FUEL_START", self.fuel_start)
+        self.fuel_start = int(input("Fuel start: "))
+        self.options.set("Aircraft", "FUEL_START", str(self.fuel_start))
+        self.options.write(open("options.cfg", "w+"))
         self.cmd_add()
 
     def cmd_view(self):
