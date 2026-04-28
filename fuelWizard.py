@@ -39,15 +39,11 @@ class FuelWizard(SHelper):
             print("No config file located. Lets make one...")
             self.options.add_section("Aircraft")
             self.options.add_section("Calculator")
-            self.fuel_start = 0
-            self.fuel_reserve = 0
-            self.fuel_capacity = 0
-            self.granularity = 10
+            self.options.set("Aircraft", "FUEL_START", "")
+            self.options.set("Aircraft", "FUEL_RESERVE", "")
+            self.options.set("Aircraft", "FUEL_CAPACITY", "")
+            self.options.set("Calculator", "GRANULARITY", "")
             self.cmd_options()
-        self.fuel_start = self.options.getint("Aircraft", "FUEL_START")
-        self.fuel_reserve = self.options.getint("Aircraft", "FUEL_RESERVE")
-        self.fuel_capacity = self.options.getint("Aircraft", "FUEL_CAPACITY")
-        self.granularity = self.options.getint("Calculator", "GRANULARITY")
 
         try:
             self.trip_data = fileOpen("tripData.json")
@@ -133,8 +129,8 @@ class FuelWizard(SHelper):
 
     def cmd_new(self):
         self.trip_data = []
-        self.fuel_start = int(input("Fuel start: "))
-        self.options.set("Aircraft", "FUEL_START", str(self.fuel_start))
+        inpt = input("Fuel start: ")
+        self.options.set("Aircraft", "FUEL_START", inpt)
         self.options.write(open("options.cfg", "w+"))
         self.cmd_add()
 
@@ -143,13 +139,13 @@ class FuelWizard(SHelper):
 
     def cmd_calculate(self):
         best_cost, best_plan = self.optimize_fuel_purchases(
-            self.fuel_start - self.fuel_reserve
+            self.options.getint("Aircraft", "FUEL_START") - self.options.getint("Aircraft", "FUEL_RESERVE")
         )
         print(
             f"\nPlan:"
             #f"{'Total Cost: ':>18}{'$':>{9 - len(str(f'{round(best_cost, 2):.2f}'))}}{round(best_cost, 2):.2f}"
             f"{f'Total Cost: ${round(best_cost, 2):.2f}':>27}"
-            f"{f'Fuel start:  {self.fuel_start}':>40}"
+            f"{f'Fuel start:  {self.options.get("Aircraft", "FUEL_START")}':>40}"
         )
         for e in best_plan:
             print(
@@ -163,17 +159,21 @@ class FuelWizard(SHelper):
             )
 
     def cmd_options(self):
-        self.fuel_start = int(input(f"Fuel start ({self.fuel_start}): ") or self.fuel_start)
-        self.options.set("Aircraft", "FUEL_START", str(self.fuel_start))
+        fuel_start = self.options.get("Aircraft", "FUEL_START")
+        inpt = input(f"Fuel start ({fuel_start}): ") or fuel_start
+        self.options.set("Aircraft", "FUEL_START", inpt)
 
-        self.fuel_reserve = int(input(f"Reserve ({self.fuel_reserve}): ") or self.fuel_reserve)
-        self.options.set("Aircraft", "FUEL_RESERVE", str(self.fuel_reserve))
+        fuel_reserve = self.options.get("Aircraft", "FUEL_RESERVE")
+        inpt = input(f"Reserve ({fuel_reserve}): ") or fuel_reserve
+        self.options.set("Aircraft", "FUEL_RESERVE", inpt)
 
-        self.fuel_capacity = int(input(f"Fuel tank maximum capacity ({self.fuel_capacity}): ") or self.fuel_capacity)
-        self.options.set("Aircraft", "FUEL_CAPACITY", str(self.fuel_capacity))
+        fuel_capacity = self.options.get("Aircraft", "FUEL_CAPACITY")
+        inpt = input(f"Fuel tank maximum capacity ({fuel_capacity}): ") or fuel_capacity
+        self.options.set("Aircraft", "FUEL_CAPACITY", inpt)
 
-        self.granularity = int(input(f"Granularity ({self.granularity}): ") or self.granularity)
-        self.options.set("Calculator", "GRANULARITY", str(self.granularity))
+        granularity = self.options.get("Calculator", "GRANULARITY")
+        inpt = input(f"Granularity ({granularity}): ") or granularity
+        self.options.set("Calculator", "GRANULARITY", inpt)
 
         self.options.write(open("options.cfg", "w+"))
 
@@ -197,11 +197,11 @@ class FuelWizard(SHelper):
         current_leg_data = self.trip_data[leg_index]
 
         # amount the plane weighs if it was empty
-        min_fuel_weight = current_leg_data["zero_fuel_weight"] + self.fuel_reserve
+        min_fuel_weight = current_leg_data["zero_fuel_weight"] + self.options.getint("Aircraft", "FUEL_RESERVE")
 
         # max takeoff fuel at current airport
         max_takeoff_fuel = current_leg_data["max_takeoff"] - min_fuel_weight
-        max_takeoff_fuel = min(max_takeoff_fuel, self.fuel_capacity)
+        max_takeoff_fuel = min(max_takeoff_fuel, self.options.getint("Aircraft", "FUEL_CAPACITY"))
 
         # leg burn
         leg_burn = current_leg_data["leg_burn"]
@@ -279,14 +279,14 @@ class FuelWizard(SHelper):
         # iterate through all possible fuel purchases for this leg.
         # min/max gal inclusive. Step by granularity.
         for purchase_gal in range(
-                min_purchase_gal, max_purchase_gal, self.granularity
+                min_purchase_gal, max_purchase_gal, self.options.getint("Calculator", "GRANULARITY")
         ):
             # calculate possible fuel states
             purchase_lbs = purchase_gal * FUEL_DENSITY_LBS_PER_GAL
             fuel_start_lbs = current_fuel_remaining_lbs + purchase_lbs
             next_fuel_remaining_lbs = fuel_start_lbs - this_leg["leg_burn"]
             takeoff_weight = (
-                    this_leg["zero_fuel_weight"] + self.fuel_reserve + fuel_start_lbs
+                    this_leg["zero_fuel_weight"] + self.options.getint("Aircraft", "FUEL_RESERVE") + fuel_start_lbs
             )
             landing_weight = takeoff_weight - this_leg["leg_burn"]
 
@@ -305,8 +305,8 @@ class FuelWizard(SHelper):
                 "purchase_gallons": purchase_gal,
                 "purchase_cost": round(purchase_cost, 2),
                 "parking_fee_paid": fee_paid,
-                "fuel_start": int(fuel_start_lbs) + self.fuel_reserve,
-                "fuel_end": int(next_fuel_remaining_lbs) + self.fuel_reserve,
+                "fuel_start": int(fuel_start_lbs) + self.options.getint("Aircraft", "FUEL_RESERVE"),
+                "fuel_end": int(next_fuel_remaining_lbs) + self.options.getint("Aircraft", "FUEL_RESERVE"),
                 "takeoff_weight": int(takeoff_weight),
                 "max_takeoff": this_leg["max_takeoff"],
                 "landing_weight": int(landing_weight),
